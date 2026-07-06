@@ -9,7 +9,7 @@
   --frosted-blue-light: #ade8f4;
   --light-cyan: #caf0f8;
 
-  --bg: var(--light-cyan);
+  --bg: #ffffff;
   --text: var(--deep-twilight);
   --muted: var(--french-blue);
   --accent: var(--bright-teal);
@@ -47,8 +47,8 @@ body {
   pointer-events: none;
   z-index: -1;
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(0, 180, 216, 0.14), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 95% 20%, rgba(72, 202, 228, 0.12), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(0, 180, 216, 0.05), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 95% 20%, rgba(72, 202, 228, 0.04), transparent 50%),
     var(--bg);
   animation: ambientShift 18s ease-in-out infinite alternate;
 }
@@ -71,7 +71,7 @@ body {
   grid-template-columns: auto 1fr;
   gap: 36px;
   align-items: center;
-  background: linear-gradient(135deg, #ffffff 0%, var(--frosted-blue-light) 55%, var(--light-cyan) 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fcfe 100%);
   border: 1px solid var(--border);
   border-radius: 24px;
   padding: 44px 42px;
@@ -229,7 +229,7 @@ h2 {
   overflow: hidden;
   border: 1px solid var(--border);
   box-shadow: 0 16px 40px rgba(3, 4, 94, 0.1);
-  background: var(--frosted-blue-light);
+  background: #ffffff;
 }
 
 .setup-frame img {
@@ -305,7 +305,7 @@ p {
 .project-card {
   border: 1px solid var(--border);
   border-left: 4px solid var(--accent);
-  background: linear-gradient(145deg, #ffffff, var(--light-cyan));
+  background: #ffffff;
   padding: 18px 18px 16px;
   border-radius: 14px;
   transition:
@@ -373,7 +373,7 @@ p {
   position: relative;
   padding: 16px 18px 16px 22px;
   border-radius: 14px;
-  background: linear-gradient(145deg, #ffffff, var(--light-cyan));
+  background: #ffffff;
   border: 1px solid var(--border);
   border-left: 4px solid var(--accent);
   transition:
@@ -424,7 +424,7 @@ p {
   padding: 10px 16px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, #ffffff, var(--light-cyan));
+  background: #ffffff;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 0.84rem;
   font-weight: 600;
@@ -441,7 +441,7 @@ p {
   transform: translateY(-3px) scale(1.02);
   border-color: rgba(0, 150, 199, 0.45);
   box-shadow: 0 8px 20px rgba(0, 119, 182, 0.12);
-  background: linear-gradient(135deg, #ffffff, var(--frosted-blue-light));
+  background: #f8fcfe;
 }
 
 /* ── Honors ── */
@@ -459,7 +459,7 @@ p {
   padding: 18px 16px;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: linear-gradient(145deg, #ffffff, var(--light-cyan));
+  background: #ffffff;
   transition:
     transform 0.35s var(--ease-spring),
     box-shadow 0.35s var(--ease-out);
@@ -514,7 +514,7 @@ p {
   padding: 28px 20px;
   border-radius: 20px;
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, #ffffff, var(--light-cyan));
+  background: #ffffff;
 }
 
 .footer p {
