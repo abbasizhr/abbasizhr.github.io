@@ -571,7 +571,6 @@ p {
 
 .section-intro {
   margin: 0 0 18px;
-  max-width: 62ch;
   color: var(--muted);
   font-size: 0.98rem;
 }
