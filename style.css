@@ -567,6 +567,197 @@ p {
   to { box-shadow: 0 20px 50px rgba(0, 119, 182, 0.12); }
 }
 
+/* ── Featured project: figures & key results ── */
+
+.section-intro {
+  margin: 0 0 18px;
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0 0 22px;
+}
+
+.metric {
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px 14px;
+  transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-out);
+}
+
+.metric:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(0, 119, 182, 0.12);
+}
+
+.metric-value {
+  display: block;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--bright-teal);
+}
+
+.metric-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.figure-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.figure-card {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(3, 4, 94, 0.07);
+  transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-out);
+}
+
+.figure-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(0, 119, 182, 0.16);
+}
+
+.figure-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+}
+
+.figure-card figcaption {
+  padding: 12px 14px 14px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.figure-card figcaption strong {
+  display: block;
+  margin-bottom: 3px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--french-blue);
+}
+
+/* ── Click-to-enlarge figures ── */
+
+.figure-zoom {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  font: inherit;
+  color: inherit;
+}
+
+.figure-zoom:focus-visible {
+  outline: 3px solid var(--turquoise);
+  outline-offset: -3px;
+}
+
+/* Author `display: flex` below would otherwise beat the browser's
+   `[hidden] { display: none }`, leaving the overlay permanently visible. */
+.lightbox[hidden] {
+  display: none;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  background: rgba(3, 4, 94, 0.82);
+  backdrop-filter: blur(4px);
+  cursor: zoom-out;
+  animation: lightboxIn 0.22s var(--ease-out);
+}
+
+@keyframes lightboxIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lightbox-inner {
+  margin: 0;
+  max-width: 96vw;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+
+.lightbox-inner img {
+  display: block;
+  max-width: 96vw;
+  max-height: 82vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.lightbox-inner figcaption {
+  margin-top: 10px;
+  color: var(--light-cyan);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 1.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.25s var(--ease-out);
+}
+
+.lightbox-close:hover,
+.lightbox-close:focus-visible {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+body.lightbox-open {
+  overflow: hidden;
+}
+
 /* ── Responsive ── */
 
 @media (max-width: 760px) {
