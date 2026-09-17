@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Computational Optical System Modeling &amp; Image Reconstruction | Zahra Abbasi, Ph.D.</title>
+  <meta
+    name="description"
+    content="A physically validated Fourier-optics simulator: pupil, point spread function, MTF, detector sampling, noise and deconvolution, checked against closed-form diffraction theory."
+  />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <main class="page">
+    <a class="back-link" href="../index.html#featured">&larr; Back to profile</a>
+
+    <header class="project-hero reveal">
+      <p class="eyebrow reveal-child" style="--delay: 0.05s">Featured Project</p>
+      <h1 class="reveal-child" style="--delay: 0.1s">
+        Computational Optical System Modeling and Image Reconstruction
+      </h1>
+      <p class="lede reveal-child" style="--delay: 0.15s">
+        A diffraction-limited imaging system, simulated end to end and checked against theory at
+        every step: from the pupil function through the point spread function and the modulation
+        transfer function, into a detector that integrates and samples, through Gaussian and Poisson
+        noise, and out again through three deconvolution methods.
+      </p>
+      <p class="lede reveal-child" style="--delay: 0.18s">
+        The optics are written directly on NumPy and SciPy. No external optics library appears
+        anywhere in the forward model, which is what makes the validation section mean something
+        rather than being two libraries agreeing with each other.
+      </p>
+      <div class="buttons reveal-child" style="--delay: 0.22s">
+        <a class="button primary" href="../resources/computational_optics_report.pdf" target="_blank" rel="noopener">
+          Read the paper (PDF)
+        </a>
+        <a class="button" href="../resources/computational_optics_report_fa.pdf" target="_blank" rel="noopener">
+          <span lang="fa" dir="rtl">گزارش فارسی</span> &middot; PDF
+        </a>
+      </div>
+    </header>
+
+    <section class="section reveal">
+      <h3>The question behind it</h3>
+      <p class="section-intro">
+        Optical resolution is usually discussed with three different numbers &mdash; the Abbe limit,
+        the Rayleigh radius, and the PSF full width at half maximum &mdash; that differ by up to 20%
+        and get used interchangeably. Aberration severity is quoted sometimes in waves RMS and
+        sometimes peak-to-valley, which for defocus alone differ by a factor of 3.46. Deconvolution
+        methods get compared against each other when the dominant variable is actually the
+        regularization parameter <em>inside</em> each one. And detector sampling is described as
+        &ldquo;losing detail&rdquo; when what it really does is put real energy at the wrong frequency.
+      </p>
+      <p class="section-intro">
+        Each of those is answerable with a number. This project builds a simulator careful enough to
+        produce those numbers, shows that it reproduces textbook diffraction theory first, and then
+        reports what it finds &mdash; including where a widely quoted approximation stops working.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric reveal-child" style="--delay: 0.05s">
+          <span class="metric-value">21 / 21</span>
+          <span class="metric-label">Physics checks passed</span>
+        </div>
+        <div class="metric reveal-child" style="--delay: 0.08s">
+          <span class="metric-value">2.9&times;10<sup>&minus;4</sup></span>
+          <span class="metric-label">RMS MTF error vs analytic theory</span>
+        </div>
+        <div class="metric reveal-child" style="--delay: 0.11s">
+          <span class="metric-value">4.6&times;10<sup>&minus;16</sup></span>
+          <span class="metric-label">Agreement of two independent OTF routes</span>
+        </div>
+        <div class="metric reveal-child" style="--delay: 0.14s">
+          <span class="metric-value">63 s</span>
+          <span class="metric-label">To reproduce every result from scratch</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h3>How it is built, and why that way</h3>
+      <p class="section-intro">
+        Four decisions do most of the work. Each of them exists because the obvious alternative
+        fails quietly rather than loudly.
+      </p>
+
+      <div class="method-grid">
+        <div class="method-card reveal-child" style="--delay: 0.05s">
+          <h4>The pupil lives in image-space frequency</h4>
+          <p>
+            Not on a separate pupil-plane length grid. The focal length then cancels out of every
+            quantity and never appears in the code. More usefully, the incoherent cutoff
+            2&middot;NA/&lambda; emerges on its own, because the transfer function is the pupil's
+            autocorrelation &mdash; so checking the cutoff actually tests something instead of
+            restating a constant that was typed in.
+          </p>
+        </div>
+
+        <div class="method-card reveal-child" style="--delay: 0.08s">
+          <h4>One place that touches <code>fftshift</code></h4>
+          <p>
+            Every array is stored with its origin in the middle, where a human and
+            <code>imshow</code> both expect it. Two helper functions absorb the shift pair and carry
+            the area weights that make them exact inverses in physical units. Losing track of the
+            origin is the dominant failure mode in Fourier-optics code, so it is confined to one
+            file and tested there.
+          </p>
+        </div>
+
+        <div class="method-card reveal-child" style="--delay: 0.11s">
+          <h4>Boundary handling is an explicit choice</h4>
+          <p>
+            An FFT performs a <em>circular</em> convolution: light leaving the right edge re-enters
+            on the left. For a grating that genuinely is periodic on the grid that is exact and
+            fast; for a photograph it is wrong. So the convolution takes an explicit boundary
+            argument with no silently-safe default, and the deconvolvers make the same choice.
+          </p>
+        </div>
+
+        <div class="method-card reveal-child" style="--delay: 0.14s">
+          <h4>Seeds are derived from labels</h4>
+          <p>
+            The noise for a condition comes from a hash of that condition's name, not from a shared
+            random stream. It means adding one row to a sweep does not silently change the noise in
+            every row after it &mdash; so two runs of &ldquo;the same&rdquo; experiment stay
+            comparable.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h3>Validation comes first</h3>
+      <p class="claim">
+        A simulator that produces plausible-looking blurred images has demonstrated nothing. Every
+        one of the 21 checks compares against a closed-form result &mdash; never against a stored
+        output of this code, which would only lock in whatever it did the first time.
+      </p>
+
+      <div class="table-wrap reveal-child" style="--delay: 0.05s">
+        <table class="data-table">
+          <thead>
+            <tr><th>Check</th><th>Expected</th><th>Measured</th><th>Relative error</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Normalized PSF sums to one</td><td class="num">1</td><td class="num">1.0000</td><td class="num">1.1&times;10<sup>&minus;16</sup></td></tr>
+            <tr><td>MTF at zero frequency</td><td class="num">1</td><td class="num">1.0000</td><td class="num">1.1&times;10<sup>&minus;16</sup></td></tr>
+            <tr><td>PSF FWHM &divide; (&lambda;/2NA)</td><td class="num">1.02899</td><td class="num">1.02947</td><td class="num">4.7&times;10<sup>&minus;4</sup></td></tr>
+            <tr><td>MTF50 &divide; cutoff</td><td class="num">0.40397</td><td class="num">0.40374</td><td class="num">5.8&times;10<sup>&minus;4</sup></td></tr>
+            <tr><td>Cutoff at 1% MTF &divide; 2NA/&lambda;</td><td class="num">0.95874</td><td class="num">0.95820</td><td class="num">5.6&times;10<sup>&minus;4</sup></td></tr>
+            <tr><td>OTF via PSF vs via pupil autocorrelation</td><td class="num">0</td><td class="num">4.6&times;10<sup>&minus;16</sup></td><td class="num">&mdash;</td></tr>
+            <tr><td>Imaged grating contrast at &nu; = 0.5</td><td class="num">0.39100</td><td class="num">0.39080</td><td class="num">5.1&times;10<sup>&minus;4</sup></td></tr>
+            <tr><td>Strehl from PSF vs from pupil integral</td><td class="num">equal</td><td class="num">agree to 5&times;10<sup>&minus;16</sup></td><td class="num">&mdash;</td></tr>
+            <tr><td>Fraunhofer circular aperture vs Airy pattern</td><td class="num">0</td><td class="num">1.5&times;10<sup>&minus;4</sup></td><td class="num">&mdash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="section-intro" style="margin-top:18px">
+        The two strongest rows are the cross-checks. The optical transfer function can be computed
+        as the Fourier transform of the PSF, or directly as the autocorrelation of the pupil; those
+        are mathematically identical but share almost no code, so their agreement to 16 decimal
+        places is a real test of the transform conventions. Similarly the Strehl ratio is computed
+        once through a PSF and once through a pupil integral that never calls an FFT at all.
+      </p>
+
+      <div class="figure-grid">
+        <figure class="figure-card reveal-child" style="--delay: 0.05s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: simulation against closed-form theory">
+            <img src="../resources/optics_validation.png" alt="PSF radial profile against the Airy pattern, simulated MTF against the analytic incoherent MTF, and the residual between them" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Simulation against theory</strong>
+            The residual gets its own panel on purpose: at the scale of the middle panel a 0.1%
+            error is simply invisible, and plotting one curve on top of another would hide exactly
+            what the figure is meant to show.
+          </figcaption>
+        </figure>
+
+        <figure class="figure-card reveal-child" style="--delay: 0.1s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: pupil, PSF and MTF">
+            <img src="../resources/optics_pupil_psf_mtf.png" alt="Circular pupil, the point spread function it produces on a logarithmic scale, and the modulation transfer function with the cutoff frequency marked" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Pupil &rarr; PSF &rarr; MTF</strong>
+            Three panels that are really one argument: each is the Fourier transform of the one
+            before it. The dashed circle is the incoherent cutoff 2&middot;NA/&lambda;, which the
+            simulation produces rather than assumes.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h3>Aberrations: where a familiar approximation stops working</h3>
+      <p class="claim">
+        The Mar&eacute;chal approximation for the Strehl ratio overstates the true value by a factor
+        of 3.7 at a quarter wave RMS of defocus &mdash; 0.085 against a true 0.023 &mdash; and by
+        orders of magnitude beyond that. It is a small-aberration expansion and behaves like one.
+      </p>
+      <p class="section-intro">
+        Four aberrations are swept at six severities each: defocus, astigmatism, coma and spherical.
+        Severity is in waves <em>RMS</em> of a single Noll-normalized Zernike mode, with the
+        peak-to-valley equivalent carried as its own column &mdash; because the conversion differs
+        per mode, and a factor of three and a half is exactly the sort of thing that makes two
+        aberration studies appear to disagree when they do not.
+      </p>
+      <p class="section-intro">
+        A second result falls out of the same sweep: the Strehl ratio and the MTF disagree about
+        which aberration is worst, because they measure different things. At a tenth of a wave RMS
+        of defocus &mdash; a level a Strehl of 0.663 would call &ldquo;nearly diffraction
+        limited&rdquo; &mdash; mid-frequency contrast has already fallen by 40%.
+      </p>
+
+      <div class="figure-grid">
+        <figure class="figure-card reveal-child" style="--delay: 0.05s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: MTF50 and Strehl ratio against wavefront error">
+            <img src="../resources/optics_mtf50_strehl.png" alt="MTF50 against wavefront error for four aberrations, and Strehl ratio with the Marechal approximation on a logarithmic scale" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Two summaries that disagree</strong>
+            Deliberately two panels rather than one frame with two vertical scales: a shared frame
+            would invite the reader to read a crossing point that carries no meaning. The dashed
+            line is where Mar&eacute;chal parts company with the truth.
+          </figcaption>
+        </figure>
+
+        <figure class="figure-card reveal-child" style="--delay: 0.1s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: aberration gallery">
+            <img src="../resources/optics_aberrations.png" alt="Pupil phase maps and resulting point spread functions for defocus, astigmatism, coma and spherical aberration at five severities" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Four aberrations, five severities</strong>
+            Each row shares one colour scale and every PSF shares one logarithmic scale. That
+            matters: with per-panel auto-scaling a 0.1-wave and a 1.0-wave aberration look
+            identical, which hides the only variable being swept.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h3>Noise and restoration: the parameter matters more than the method</h3>
+      <p class="claim">
+        The spread <em>within</em> a deconvolution method, across its own regularization parameter,
+        is larger than the spread between methods. And PSNR and SSIM do not pick the same setting,
+        so &ldquo;best&rdquo; is not a property of the method alone.
+      </p>
+      <p class="section-intro">
+        Five treatments are compared across additive Gaussian read noise and Poisson shot noise.
+        One piece of algebra is stated rather than glossed over, because it would otherwise produce
+        a meaningless comparison: the &ldquo;regularized inverse&rdquo; that appears in most
+        textbooks <em>is</em> the Wiener filter with K set to the regularization constant. They are
+        not two methods. The naive inverse reported here is therefore the genuine division it is
+        supposed to be contrasted with &mdash; and it is unusable, dropping to 7.2 dB where doing
+        nothing scores 25.4 dB.
+      </p>
+      <p class="section-intro">
+        Richardson&ndash;Lucy has no explicit regularizer at all, so the iteration count becomes
+        one. With no noise the metrics are still improving at 60 iterations; at &sigma; = 0.05 the
+        optimum arrives at iteration 3. A fixed recommendation of &ldquo;20 iterations&rdquo; is
+        therefore wrong in both directions, by a factor of twenty, depending on the noise.
+      </p>
+
+      <div class="figure-grid">
+        <figure class="figure-card reveal-child" style="--delay: 0.05s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: object, measurement and four restorations">
+            <img src="../resources/optics_restoration.png" alt="The original object, the blurred and noisy measurement, and four restorations each captioned with its measured PSNR and SSIM" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Object, measurement, four restorations</strong>
+            Each panel carries its own measured numbers, so the visual impression and the metrics
+            sit in the same place and cannot quietly drift apart.
+          </figcaption>
+        </figure>
+
+        <figure class="figure-card reveal-child" style="--delay: 0.1s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: Richardson-Lucy iteration study">
+            <img src="../resources/optics_rl_iterations.png" alt="PSNR and SSIM against Richardson-Lucy iteration number at three noise levels, with each optimum marked" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Iteration count is the regularizer</strong>
+            Maximum likelihood applied to noisy data eventually fits the noise. The iteration does
+            not converge to something good and stop &mdash; it converges to something bad, and the
+            turning point moves with the noise level.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h3>Detector sampling: a corruption, not a loss</h3>
+      <p class="claim">
+        Undersampling does not remove detail. It moves real energy to the wrong frequency, where it
+        is indistinguishable from signal that belongs there.
+      </p>
+      <p class="section-intro">
+        The detector does two separate things that are routinely conflated. Pixel area integration
+        is a blur with a sinc transfer function &mdash; a real, irreversible loss of contrast.
+        Sampling replicates the spectrum, and when the pitch is too coarse the replicas overlap and
+        fold. Measured across ten grating frequencies, the frequency at which a folded grating
+        reappears matches the prediction to 3.5&times;10<sup>&minus;10</sup> cycles per metre.
+      </p>
+      <p class="section-intro">
+        How much folds turns out to depend on the object as much as on the detector. At four times
+        the Nyquist pitch a broadband target loses 36.7% of its modulation to folding while an
+        ordinary photograph loses 1.1% &mdash; not because the detector behaves differently, but
+        because a photograph has little energy near the optical cutoff to begin with. A sampling
+        study run only on photographs substantially understates the risk.
+      </p>
+
+      <figure class="figure-card reveal-child" style="--delay: 0.05s">
+        <button type="button" class="figure-zoom" aria-label="Enlarge: the aliasing folding law">
+          <img src="../resources/optics_aliasing.png" alt="Three gratings imaged through identical optics and detector, two of which fold to coarser patterns, and a plot of apparent against true frequency" loading="lazy" />
+        </button>
+        <figcaption>
+          <strong>Where an undersampled grating reappears</strong>
+          The important feature is the symmetry of the right-hand panel. Once a grating has folded,
+          nothing left in the sampled image says which side of the Nyquist frequency it came from.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section class="section reveal">
+      <h3>What the study found</h3>
+      <ol class="findings">
+        <li class="reveal-child" style="--delay: 0.03s">
+          <strong>The simulator reproduces diffraction theory to a few parts in 10<sup>4</sup></strong>
+          across 21 independent checks, including two structurally different routes to the optical
+          transfer function that agree to machine precision.
+        </li>
+        <li class="reveal-child" style="--delay: 0.06s">
+          <strong>The Mar&eacute;chal Strehl approximation overstates the true value by 3.7&times;</strong>
+          at a quarter wave RMS, and by orders of magnitude beyond. Quoting it outside the
+          diffraction-limited regime is not a conservative choice.
+        </li>
+        <li class="reveal-child" style="--delay: 0.09s">
+          <strong>Strehl and MTF disagree about which aberration is worst.</strong>
+          At 0.1 waves RMS of defocus the Strehl of 0.663 still reads as acceptable while MTF50 has
+          fallen 40%. A single scalar quality number cannot stand in for the transfer function.
+        </li>
+        <li class="reveal-child" style="--delay: 0.12s">
+          <strong>Regularization strength matters more than method choice</strong>, and PSNR and
+          SSIM select different settings &mdash; so reporting only one metric would have produced a
+          different recommendation.
+        </li>
+        <li class="reveal-child" style="--delay: 0.15s">
+          <strong>For Richardson&ndash;Lucy the iteration count <em>is</em> the regularizer</strong>:
+          the optimum moves from 60 iterations at zero noise to 3 at &sigma; = 0.05.
+        </li>
+        <li class="reveal-child" style="--delay: 0.18s">
+          <strong>Deconvolution's advantage is not robust to PSF error.</strong>
+          A quarter-wave error in the assumed defocus costs 22.9 dB &rarr; 20.7 dB &mdash; which is
+          the honest context for every number measured with the true PSF in hand.
+        </li>
+        <li class="reveal-child" style="--delay: 0.21s">
+          <strong>Undersampling corrupts rather than degrades</strong>, and by how much depends on
+          the object's spectrum, not only on the detector.
+        </li>
+      </ol>
+
+      <p class="note">
+        <strong>Limitations, stated rather than buried.</strong> The theory is scalar, so
+        polarization is not modelled and the NA = 1.0 rows sit outside the regime where scalar
+        theory is quantitative. The imaging is shift-invariant, so field-dependent aberration is
+        absent. Deconvolution is handed the true PSF except in the mismatch study that exists
+        precisely to measure what that assumption is worth. The pupil is sampled on a Cartesian
+        grid, so its rim is pixelated &mdash; the dominant error near the cutoff, and the reason the
+        analytic comparison is reported only out to 95% of it. And one figure's apparent result, the
+        collapse of eight PSFs onto a single curve, is exact <em>by construction</em> because the
+        simulation grid is defined in units of &lambda;/NA; it validates the code's unit handling,
+        not the physics.
+      </p>
+    </section>
+
+    <section class="section reveal">
+      <h3>Reproducibility</h3>
+      <p class="section-intro">
+        Every experiment is driven by a configuration file, uses a seed derived from a label rather
+        than a shared stream, and writes its results as CSV and JSON alongside a record of library
+        versions and platform. The figures are generated programmatically, the report tables are
+        generated from the CSVs, and every number quoted in the prose of both reports is a macro
+        written from those same CSVs. Change a parameter and the text changes with it; delete a
+        result and the report fails to build rather than printing a stale value.
+      </p>
+      <p class="section-intro">
+        This was checked rather than asserted. Deleting the results directory and re-running the
+        pipeline reproduces every measured value in every CSV exactly, and 17 of the 18 figures
+        bit-identically. Running that check is also what exposed a genuine defect: one figure
+        annotated a residual at the level of double precision, whose leading digit changed depending
+        on whether a wavelength had been written <code>633e-9</code> or <code>633 &times; 1e-9</code>
+        &mdash; one unit in the last place. It now quotes a bound instead.
+      </p>
+
+      <div class="figure-grid">
+        <figure class="figure-card reveal-child" style="--delay: 0.05s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: PSF against wavelength and numerical aperture">
+            <img src="../resources/optics_psf_scaling.png" alt="Point spread functions at four wavelengths and four numerical apertures, all on the same physical axis, and the eight profiles rescaled onto one curve" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>PSF versus wavelength and NA</strong>
+            All eight panels share one physical axis, so the core visibly widens with wavelength and
+            narrows with NA. The right-hand panel rescales them &mdash; and says on the figure
+            itself why that collapse is a check on the code rather than evidence for the physics.
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="buttons" style="margin-top:22px">
+        <a class="button primary" href="../resources/computational_optics_report.pdf" target="_blank" rel="noopener">
+          Full paper (PDF, 10 pages)
+        </a>
+        <a class="button" href="../resources/computational_optics_report_fa.pdf" target="_blank" rel="noopener">
+          <span lang="fa" dir="rtl">گزارش آموزشی فارسی</span> &middot; PDF, 16 pages
+        </a>
+        <a class="button" href="../index.html#featured">Back to profile</a>
+      </div>
+    </section>
+
+    <footer class="footer reveal">
+      <p>
+        Open to postdoctoral, research associate, and collaborative opportunities in optics,
+        photonics, and computational imaging.
+      </p>
+      <p class="footer-links">
+        <a href="mailto:zahra.abbasizhr@gmail.com">zahra.abbasizhr@gmail.com</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://www.linkedin.com/in/abbasizhr/" target="_blank" rel="noopener">LinkedIn</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://scholar.google.ca/citations?user=mczxjv4AAAAJ" target="_blank" rel="noopener">Google Scholar</a>
+      </p>
+    </footer>
+  </main>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Close enlarged image">&times;</button>
+    <figure class="lightbox-inner">
+      <img id="lightbox-img" src="" alt="" />
+      <figcaption id="lightbox-caption"></figcaption>
+    </figure>
+  </div>
+
+  <script src="../script.js"></script>
+</body>
+</html>

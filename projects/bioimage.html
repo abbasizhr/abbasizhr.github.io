@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Computational Bioimage Analysis for Quantitative Measurement | Zahra Abbasi, Ph.D.</title>
+  <meta
+    name="description"
+    content="A reproducible classical segmentation and measurement pipeline on the BBBC038 nuclei collection, with a controlled study of how far the measurements can be trusted as image quality degrades."
+  />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <main class="page">
+    <a class="back-link" href="../index.html#featured">&larr; Back to profile</a>
+
+    <header class="project-hero reveal">
+      <p class="eyebrow reveal-child" style="--delay: 0.05s">Featured Project</p>
+      <h1 class="reveal-child" style="--delay: 0.1s">
+        Computational Bioimage Analysis for Quantitative Measurement
+      </h1>
+      <p class="lede reveal-child" style="--delay: 0.15s">
+        A workflow for measuring objects in light-microscopy images: load, preprocess, segment,
+        measure each object, evaluate against instance-level ground truth, and then quantify how far
+        those measurements can still be trusted once the image quality drops.
+      </p>
+      <p class="lede reveal-child" style="--delay: 0.18s">
+        Deliberately classical, with no deep learning anywhere. The aim was never leaderboard
+        performance &mdash; it was a pipeline transparent enough that every step can be inspected
+        and every number traced back to a parameter written down in one file.
+      </p>
+      <div class="buttons reveal-child" style="--delay: 0.22s">
+        <a class="button primary" href="../resources/bioimage_report.pdf" target="_blank" rel="noopener">
+          Read the paper (PDF)
+        </a>
+        <a class="button" href="../resources/bioimage_report_fa.pdf" target="_blank" rel="noopener">
+          <span lang="fa" dir="rtl">گزارش فارسی</span> &middot; PDF
+        </a>
+      </div>
+    </header>
+
+    <section class="section reveal">
+      <h3>The result the project is actually about</h3>
+      <p class="claim">
+        Two ways of scoring the same segmentation disagree, and the disagreement is the finding.
+        Read only the pixel-overlap column and the problem looks close to solved. Count the nuclei
+        and the pipeline is short by roughly seven per image.
+      </p>
+      <p class="section-intro">
+        Pixel overlap is nearly blind to the failure mode classical segmentation actually has, which
+        is getting the object <em>count</em> wrong. Two touching nuclei merged into one blob barely
+        move a Dice score and destroy a count. So results are reported per acquisition modality,
+        with explicit split and merge counters, and with a macro average rather than a single
+        flattering pooled number &mdash; the modality groups are badly imbalanced, and a
+        dataset-wide mean hides total failure on the smallest of them.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric reveal-child" style="--delay: 0.05s">
+          <span class="metric-value">0.872</span>
+          <span class="metric-label">Pixel Dice (pooled, test split)</span>
+        </div>
+        <div class="metric reveal-child" style="--delay: 0.08s">
+          <span class="metric-value">0.784</span>
+          <span class="metric-label">Per-object F1 @ IoU 0.5</span>
+        </div>
+        <div class="metric reveal-child" style="--delay: 0.11s">
+          <span class="metric-value">1,814</span>
+          <span class="metric-label">Merge events, against 290 splits</span>
+        </div>
+        <div class="metric reveal-child" style="--delay: 0.14s">
+          <span class="metric-value">29,461</span>
+          <span class="metric-label">Nuclei measured across 670 images</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h3>The dataset, and why only part of it is used</h3>
+      <p class="section-intro">
+        BBBC038v1 &mdash; the 2018 Data Science Bowl nuclei collection. Only the
+        <code>stage1_train</code> archive is used, because it is the only part with public
+        instance-level ground truth: one binary mask per nucleus, which is what makes object
+        counting and per-object precision and recall possible at all.
+      </p>
+
+      <div class="table-wrap reveal-child" style="--delay: 0.05s">
+        <table class="data-table">
+          <thead>
+            <tr><th>Modality group</th><th>Images</th><th>Nuclei</th><th>Character</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Grayscale fluorescence</td><td class="num">546</td><td class="num">23,541</td><td>Bright nuclei, dark field &mdash; the easy majority</td></tr>
+            <tr><td>Colour histology</td><td class="num">103</td><td class="num">4,486</td><td>Stained tissue, dark nuclei on light background</td></tr>
+            <tr><td>Grayscale brightfield</td><td class="num">21</td><td class="num">1,434</td><td>Low contrast against cytoplasm, soft boundaries</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="section-intro" style="margin-top:18px">
+        Two properties of the collection drive every later decision. Polarity is mixed: 124 of the
+        670 images are dark nuclei on a light background, and a naive pipeline silently segments the
+        <em>background</em> on those while still reporting a plausible Dice. So polarity is decided
+        once, recorded in a manifest with a hand-override column, and never re-derived &mdash; two
+        places deciding polarity is two places to disagree. And the grouping is done by a readable
+        two-question rule rather than a fitted clustering, so it can be explained in a sentence and
+        corrected by hand.
+      </p>
+      <p class="section-intro">
+        The 200/470 dev/test split is assigned by a hash of each image's identifier, so it depends on
+        neither file ordering nor a random number generator's version: an image lands in the same
+        split forever. Four parameters were tuned, and tuning and reporting on the same images would
+        have made every number an in-sample estimate.
+      </p>
+    </section>
+
+    <section class="section reveal">
+      <h3>How the pipeline works</h3>
+
+      <div class="method-grid">
+        <div class="method-card reveal-child" style="--delay: 0.05s">
+          <h4>Preprocessing</h4>
+          <p>
+            Drop the constant alpha channel (asserted, not assumed), reduce to one grayscale
+            channel, normalize polarity from the manifest, white-tophat background subtraction, a
+            small median filter, then CLAHE with a deliberately low clip limit &mdash; a high one
+            amplifies histology background texture into false objects. Images are never resized,
+            because resizing changes object scale in pixels and would make a minimum-area threshold
+            mean different things on different images.
+          </p>
+        </div>
+
+        <div class="method-card reveal-child" style="--delay: 0.08s">
+          <h4>Marker-controlled watershed</h4>
+          <p>
+            Distance transform, smoothed by one pixel, then <code>h_maxima</code> as markers. The
+            one-pixel smoothing is not cosmetic: the distance transform of a binary blob is full of
+            exactly-tied plateaus, and <code>h_maxima</code> on the raw transform returns one marker
+            per tie group instead of one per nucleus. The depth <em>h</em> is in distance-transform
+            pixels, so it reads directly: two nuclei separate when the neck between them is at least
+            <em>h</em> pixels narrower in radius than the smaller one.
+          </p>
+        </div>
+
+        <div class="method-card reveal-child" style="--delay: 0.11s">
+          <h4>Instance-level metrics</h4>
+          <p>
+            IoU between every ground-truth and predicted object, built in one vectorized pass over a
+            contingency table &mdash; at this scale that is the difference between seconds and hours.
+            Matching is greedy, which at IoU &ge; 0.5 is provably identical to optimal assignment,
+            since an object cannot exceed that threshold against two different objects at once.
+          </p>
+        </div>
+
+        <div class="method-card reveal-child" style="--delay: 0.14s">
+          <h4>Verification without a test suite</h4>
+          <p>
+            No <code>pytest</code>, by design. The two plausible failures here &mdash; polarity
+            inversion and watershed split/merge &mdash; are both <em>silent</em>: they produce a
+            believable Dice while the result is wrong. So the checks live where they are visible.
+            Every run begins by scoring four synthetic cases with known answers and printing them.
+            The split-nucleus case scores Dice 1.00 with F1@0.5 of 0.00, which is the whole argument
+            of the project shown rather than asserted.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h3>Results by modality</h3>
+      <div class="table-wrap reveal-child" style="--delay: 0.05s">
+        <table class="data-table">
+          <thead>
+            <tr><th>Group</th><th>Images</th><th>Dice</th><th>F1@0.5</th><th>F1@0.7</th><th>DSB score</th><th>Splits</th><th>Merges</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Grayscale fluorescence</td><td class="num">375</td><td class="num">0.891</td><td class="num">0.828</td><td class="num">0.718</td><td class="num">0.529</td><td class="num">163</td><td class="num">1,198</td></tr>
+            <tr><td>Colour histology</td><td class="num">77</td><td class="num">0.841</td><td class="num">0.643</td><td class="num">0.470</td><td class="num">0.278</td><td class="num">121</td><td class="num">456</td></tr>
+            <tr><td>Grayscale brightfield</td><td class="num">18</td><td class="num">0.610</td><td class="num">0.452</td><td class="num">0.359</td><td class="num">0.185</td><td class="num">6</td><td class="num">160</td></tr>
+            <tr><td><strong>Macro average</strong></td><td class="num">470</td><td class="num"><strong>0.781</strong></td><td class="num"><strong>0.641</strong></td><td class="num">0.515</td><td class="num"><strong>0.331</strong></td><td class="num">290</td><td class="num">1,814</td></tr>
+            <tr><td>All images (pooled)</td><td class="num">470</td><td class="num">0.872</td><td class="num">0.784</td><td class="num">0.663</td><td class="num">0.475</td><td class="num">290</td><td class="num">1,814</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="section-intro" style="margin-top:18px">
+        Brightfield is the weakest group on both axes, and the failure is structural rather than
+        statistical: brightfield nuclei have low contrast against cytoplasm and soft boundaries, so a
+        global threshold has no clean level to find, and the distance transform inside a
+        poorly-delimited blob offers the watershed no reliable peak to use as a marker.
+      </p>
+
+      <p class="note">
+        <strong>On the published baselines.</strong> The dataset ships a leaderboard, and these
+        metrics use the same definitions, so the numbers can be put side by side &mdash; but they
+        are not like-for-like and the comparison has to be read with that in front of it. The
+        pooled F1@0.5 of 0.784 appears to exceed a published U-Net entry at 0.734. That is
+        <em>not</em> a win and is not claimed as one: the published rows score the competition's
+        held-out test sets, which were assembled to include acquisition types absent from
+        <code>stage1_train</code>, while this split is a partition of <code>stage1_train</code>
+        itself and is dominated by the easiest category in the collection. On the official DSB
+        score, which penalizes at every IoU threshold from 0.5 to 0.95, this work sits below every
+        published entry by a wide margin &mdash; which is the expected and correct position for a
+        transparent classical baseline.
+      </p>
+
+      <div class="figure-grid">
+        <figure class="figure-card reveal-child" style="--delay: 0.05s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: segmentation compared against ground truth">
+            <img src="../resources/bioimage_segmentation.jpg" alt="Ground-truth nuclei outlines compared against three segmentation methods across fluorescence, histology and brightfield images" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Segmentation vs ground truth</strong>
+            Three methods on identical input across the three acquisition types. Brightfield
+            cytology needs a three-class threshold, because a single Otsu cut outlines whole cells
+            instead of nuclei.
+          </figcaption>
+        </figure>
+
+        <figure class="figure-card reveal-child" style="--delay: 0.1s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: preprocessing stages">
+            <img src="../resources/bioimage_preprocessing.jpg" alt="Raw, normalized, background-corrected, denoised and contrast-enhanced versions of a microscopy image" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Preprocessing</strong>
+            Polarity normalization, white-tophat background removal, median denoising and CLAHE,
+            applied consistently across modalities with mixed nuclei polarity.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h3>How far can the measurements be trusted?</h3>
+      <p class="claim">
+        Images are degraded along four controlled axes and the whole pipeline is re-run on each one,
+        so &ldquo;the method is sensitive to image quality&rdquo; becomes a measurement with a shape
+        rather than an assertion.
+      </p>
+      <p class="section-intro">
+        <strong>Noise.</strong> Grayscale fluorescence holds up to about &sigma; = 0.05 and then
+        collapses, from F1@0.5 of 0.922 down to 0.467 at &sigma; = 0.2. Brightfield fails far earlier
+        and harder (0.452 &rarr; 0.082). Colour histology is the most robust (0.760 &rarr; 0.674),
+        because stained nuclei carry a large intensity separation from the surrounding tissue.
+      </p>
+      <p class="section-intro">
+        <strong>Blur.</strong> Everything degrades. A single &sigma; in pixels is not a fair insult
+        across groups, since nucleus radii span roughly 5 to 30 pixels, so blur is also plotted
+        against &sigma; divided by each image's own median nucleus radius.
+      </p>
+      <p class="section-intro">
+        <strong>Contrast &mdash; an exactly flat null result.</strong> Across all six levels, down to
+        a compression factor of 0.05, the median F1@0.5 in every group is <em>identical</em> to its
+        baseline; the largest spread within any group is 0.0000. This is not a broken experiment.
+        Otsu's threshold is equivariant under an affine intensity transform and the pipeline works in
+        float32, so contrast compression about the image median has no route by which to change the
+        segmentation &mdash; neither clipping nor quantization intervenes.
+      </p>
+      <p class="section-intro">
+        <strong>Contrast &times; noise &mdash; the informative version.</strong> Compress the
+        contrast and <em>then</em> add a fixed &sigma; = 0.02 of noise, so the signal shrinks while
+        the noise floor stays put: F1@0.5 falls from 0.705 at full contrast to 0.489 at factor 0.15
+        and 0.053 at 0.05. The physical quantity governing segmentation is the ratio between signal
+        and noise floor, not contrast itself &mdash; which is exactly what the flat result above was
+        pointing at.
+      </p>
+
+      <div class="figure-grid">
+        <figure class="figure-card reveal-child" style="--delay: 0.05s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: measurement reliability curves">
+            <img src="../resources/bioimage_robustness.png" alt="Segmentation accuracy curves against increasing noise, blur and contrast reduction, with bootstrap confidence bands" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Measurement reliability</strong>
+            Accuracy against four degradation axes with bootstrap confidence bands. Contrast alone
+            is exactly flat, which follows from Otsu's affine equivariance rather than from a failed
+            experiment.
+          </figcaption>
+        </figure>
+
+        <figure class="figure-card reveal-child" style="--delay: 0.1s">
+          <button type="button" class="figure-zoom" aria-label="Enlarge: shape feature analysis">
+            <img src="../resources/bioimage_pca.png" alt="Principal component analysis of nucleus shape features with k-means clusters" loading="lazy" />
+          </button>
+          <figcaption>
+            <strong>Shape feature analysis</strong>
+            PCA over scale-invariant shape descriptors separates round from elongated nuclei, and
+            the structure survives within a single acquisition type &mdash; so it is morphology
+            rather than an imaging artefact.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h3>What the study found</h3>
+      <ol class="findings">
+        <li class="reveal-child" style="--delay: 0.03s">
+          <strong>Pixel overlap and object counting disagree, and only one of them is measuring the
+          real failure.</strong> Pooled Dice 0.872 against per-object F1@0.5 of 0.784, with 1,814
+          merge events &mdash; a shortfall of about seven nuclei per image.
+        </li>
+        <li class="reveal-child" style="--delay: 0.06s">
+          <strong>The macro average over modalities is the honest aggregate.</strong> It falls to
+          Dice 0.781 and F1@0.5 0.641, because a pooled mean is dominated by the 546 easiest images
+          and hides near-total failure on the 21 hardest.
+        </li>
+        <li class="reveal-child" style="--delay: 0.09s">
+          <strong>Brightfield fails structurally, not statistically.</strong> Low contrast against
+          cytoplasm leaves a global threshold no clean level to find and the watershed no reliable
+          marker.
+        </li>
+        <li class="reveal-child" style="--delay: 0.12s">
+          <strong>Contrast compression alone changes nothing at all</strong> &mdash; a provable
+          consequence of Otsu's affine equivariance, and a useful reminder that a flat curve can be
+          a result rather than a bug.
+        </li>
+        <li class="reveal-child" style="--delay: 0.15s">
+          <strong>What actually governs segmentation is signal against the noise floor.</strong>
+          Compress contrast and add fixed noise, and F1@0.5 collapses from 0.705 to 0.053.
+        </li>
+        <li class="reveal-child" style="--delay: 0.18s">
+          <strong>The variation is between images, not between noise draws.</strong> The spread
+          across three noise realizations of one image is 6&ndash;14% of the spread across images,
+          so the reported uncertainty is about the collection rather than about the random seed.
+        </li>
+      </ol>
+
+      <p class="note">
+        <strong>Limitations.</strong> Only <code>stage1_train</code> is used, so the split is easier
+        than the competition's held-out sets and the comparison against published entries is
+        indicative rather than like-for-like. The approach is classical throughout, and on the strict
+        DSB score it sits below every published learned method &mdash; which is the point of a
+        baseline, not a shortcoming of the experiment. The colour-fluorescence group admitted by the
+        grouping rule has no members in this archive, so that cell of the design is untested.
+      </p>
+
+      <div class="buttons" style="margin-top:22px">
+        <a class="button primary" href="../resources/bioimage_report.pdf" target="_blank" rel="noopener">
+          Full paper (PDF)
+        </a>
+        <a class="button" href="../resources/bioimage_report_fa.pdf" target="_blank" rel="noopener">
+          <span lang="fa" dir="rtl">گزارش آموزشی فارسی</span> &middot; PDF
+        </a>
+        <a class="button" href="../index.html#featured">Back to profile</a>
+      </div>
+    </section>
+
+    <footer class="footer reveal">
+      <p>
+        Open to postdoctoral, research associate, and collaborative opportunities in optics,
+        photonics, and computational imaging.
+      </p>
+      <p class="footer-links">
+        <a href="mailto:zahra.abbasizhr@gmail.com">zahra.abbasizhr@gmail.com</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://www.linkedin.com/in/abbasizhr/" target="_blank" rel="noopener">LinkedIn</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://scholar.google.ca/citations?user=mczxjv4AAAAJ" target="_blank" rel="noopener">Google Scholar</a>
+      </p>
+    </footer>
+  </main>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Close enlarged image">&times;</button>
+    <figure class="lightbox-inner">
+      <img id="lightbox-img" src="" alt="" />
+      <figcaption id="lightbox-caption"></figcaption>
+    </figure>
+  </div>
+
+  <script src="../script.js"></script>
+</body>
+</html>

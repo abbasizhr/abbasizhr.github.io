@@ -72,13 +72,23 @@
       <h3>Selected Projects</h3>
       <div class="grid projects">
         <article class="project-card reveal-child" style="--delay: 0.05s">
+          <span class="tag">Python · Fourier optics</span>
+          <h4>Computational Optical System Modeling and Image Reconstruction</h4>
+          <ul>
+            <li>Pupil to PSF to MTF to detector to deconvolution, implemented directly on NumPy.</li>
+            <li>Validated against closed-form diffraction theory; 21 of 21 automated physics checks pass.</li>
+          </ul>
+          <a href="projects/computational-optics.html">Read the full study &rarr;</a>
+        </article>
+
+        <article class="project-card reveal-child" style="--delay: 0.08s">
           <span class="tag">Python · scikit-image</span>
           <h4>Computational Bioimage Analysis for Quantitative Measurement</h4>
           <ul>
             <li>Classical segmentation and measurement pipeline on 670 annotated microscopy images.</li>
             <li>Instance-level evaluation and a controlled study of how noise and blur degrade measurement reliability.</li>
           </ul>
-          <a href="#bioimage">See figures and results &darr;</a>
+          <a href="projects/bioimage.html">Read the full study &rarr;</a>
         </article>
 
         <article class="project-card reveal-child" style="--delay: 0.1s">
@@ -120,89 +130,93 @@
       </div>
     </section>
 
-    <section class="section reveal" id="bioimage">
-      <h3>Featured Project: Computational Bioimage Analysis</h3>
+    <section class="section reveal" id="featured">
+      <h3>Featured Projects</h3>
       <p class="section-intro">
-        A reproducible workflow for measuring objects in light-microscopy
-        images including different major blocks (preprocessing, marker-controlled watershed segmentation, per-object feature
-        extraction), and a controlled study of how far measurements can be trusted as image quality
-        degrades. Evaluated on the 2018 Data Science Bowl nuclei collection (BBBC038) which includes 670 images
-        and 29,461 instance-annotated nuclei, with all results reported on a held-out split.
+        Two self-contained computational studies, each with its own validation suite and written
+        report. Both are deliberately classical rather than deep-learning based: the aim is a
+        pipeline whose every number traces back to a stated parameter, so a reader can check it
+        rather than take it on trust.
       </p>
 
-      <div class="metric-row">
-        <div class="metric reveal-child" style="--delay: 0.05s">
-          <span class="metric-value">0.872</span>
-          <span class="metric-label">Pixel Dice (pooled)</span>
-        </div>
-        <div class="metric reveal-child" style="--delay: 0.08s">
-          <span class="metric-value">0.784</span>
-          <span class="metric-label">Per-object F1 @ IoU 0.5</span>
-        </div>
-        <div class="metric reveal-child" style="--delay: 0.11s">
-          <span class="metric-value">29,461</span>
-          <span class="metric-label">Nuclei measured</span>
-        </div>
-        <div class="metric reveal-child" style="--delay: 0.14s">
-          <span class="metric-value">3</span>
-          <span class="metric-label">Acquisition modalities</span>
-        </div>
-      </div>
+      <div class="featured-grid">
+        <article class="featured-card reveal-child" style="--delay: 0.05s">
+          <div class="featured-thumb">
+            <img
+              src="resources/optics_pupil_psf_mtf.png"
+              alt="Circular pupil, the point spread function it produces, and the resulting modulation transfer function"
+              loading="lazy"
+              width="1500"
+              height="455"
+            />
+          </div>
+          <div class="featured-body">
+            <span class="tag">Python · NumPy/SciPy · Fourier optics</span>
+            <h4>Computational Optical System Modeling and Image Reconstruction</h4>
+            <p>
+              A diffraction-limited imaging system simulated end to end, from the pupil function
+              through the PSF, MTF, detector sampling and noise, to three deconvolution methods.
+              Every stage is checked against closed-form diffraction theory rather than against its
+              own plausibility.
+            </p>
+            <div class="featured-metrics">
+              <div>
+                <span class="metric-value">21 / 21</span>
+                <span class="metric-label">Physics checks passed</span>
+              </div>
+              <div>
+                <span class="metric-value">2.9&times;10<sup>&minus;4</sup></span>
+                <span class="metric-label">RMS MTF error vs theory</span>
+              </div>
+              <div>
+                <span class="metric-value">63 s</span>
+                <span class="metric-label">To reproduce from scratch</span>
+              </div>
+            </div>
+            <p class="featured-links">
+              <a href="projects/computational-optics.html">Read the full study &rarr;</a>
+              <a class="secondary" href="resources/computational_optics_report.pdf" target="_blank" rel="noopener">Report (PDF)</a>
+            </p>
+          </div>
+        </article>
 
-      <p class="section-intro">
-        The gap between the pixel score and the object score is the substantive result: pixel
-        overlap is nearly blind to the failure mode classical segmentation actually has, which is
-        getting the object <em>count</em> wrong. Results are therefore reported per modality with
-        explicit split and merge counters rather than as a single flattering average.
-      </p>
-
-      <div class="figure-grid">
-        <figure class="figure-card reveal-child" style="--delay: 0.05s">
-          <button type="button" class="figure-zoom" aria-label="Enlarge: segmentation compared against ground truth">
-            <img src="resources/bioimage_segmentation.jpg" alt="Ground-truth nuclei outlines compared against three segmentation methods across fluorescence, histology and brightfield images" loading="lazy" />
-          </button>
-          <figcaption>
-            <strong>Segmentation vs ground truth</strong>
-            Three methods on identical input across the three acquisition types. Brightfield
-            cytology needs a three-class threshold, because a single Otsu cut outlines whole cells
-            instead of nuclei.
-          </figcaption>
-        </figure>
-
-        <figure class="figure-card reveal-child" style="--delay: 0.1s">
-          <button type="button" class="figure-zoom" aria-label="Enlarge: preprocessing stages">
-            <img src="resources/bioimage_preprocessing.jpg" alt="Raw, normalized, background-corrected, denoised and contrast-enhanced versions of a microscopy image" loading="lazy" />
-          </button>
-          <figcaption>
-            <strong>Preprocessing</strong>
-            Polarity normalization, white-tophat background removal, median denoising and CLAHE,
-            applied consistently across modalities with mixed nuclei polarity.
-          </figcaption>
-        </figure>
-
-        <figure class="figure-card reveal-child" style="--delay: 0.15s">
-          <button type="button" class="figure-zoom" aria-label="Enlarge: measurement reliability curves">
-            <img src="resources/bioimage_robustness.png" alt="Segmentation accuracy curves against increasing noise, blur and contrast reduction, with bootstrap confidence bands" loading="lazy" />
-          </button>
-          <figcaption>
-            <strong>Measurement reliability</strong>
-            Accuracy against four degradation axes with bootstrap confidence bands. Contrast alone
-            is exactly flat, Otsu's threshold is affine-equivariant, so the governing quantity is
-            the signal-to-noise-floor ratio, not contrast.
-          </figcaption>
-        </figure>
-
-        <figure class="figure-card reveal-child" style="--delay: 0.2s">
-          <button type="button" class="figure-zoom" aria-label="Enlarge: shape feature analysis">
-            <img src="resources/bioimage_pca.png" alt="Principal component analysis of nucleus shape features with k-means clusters" loading="lazy" />
-          </button>
-          <figcaption>
-            <strong>Shape feature analysis</strong>
-            PCA over scale-invariant shape descriptors separates round from elongated nuclei, a
-            structure that survives within a single acquisition type, so it is morphology rather
-            than an imaging artefact.
-          </figcaption>
-        </figure>
+        <article class="featured-card reveal-child" style="--delay: 0.1s">
+          <div class="featured-thumb">
+            <img
+              src="resources/bioimage_segmentation.jpg"
+              alt="Ground-truth nuclei outlines compared against three segmentation methods"
+              loading="lazy"
+            />
+          </div>
+          <div class="featured-body">
+            <span class="tag">Python · scikit-image · BBBC038</span>
+            <h4>Computational Bioimage Analysis for Quantitative Measurement</h4>
+            <p>
+              A classical segmentation and measurement pipeline on 670 annotated microscopy images,
+              with a controlled study of how far the measurements can be trusted as image quality
+              degrades. The substantive result is a gap between the pixel score and the object
+              score.
+            </p>
+            <div class="featured-metrics">
+              <div>
+                <span class="metric-value">0.872</span>
+                <span class="metric-label">Pixel Dice (pooled)</span>
+              </div>
+              <div>
+                <span class="metric-value">0.784</span>
+                <span class="metric-label">Per-object F1 @ IoU 0.5</span>
+              </div>
+              <div>
+                <span class="metric-value">29,461</span>
+                <span class="metric-label">Nuclei measured</span>
+              </div>
+            </div>
+            <p class="featured-links">
+              <a href="projects/bioimage.html">Read the full study &rarr;</a>
+              <a class="secondary" href="resources/bioimage_report.pdf" target="_blank" rel="noopener">Report (PDF)</a>
+            </p>
+          </div>
+        </article>
       </div>
     </section>
 
