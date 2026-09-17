@@ -41,6 +41,12 @@ body {
   overflow-x: hidden;
 }
 
+/* No image may render wider than the box that holds it, whatever its intrinsic
+   size or its width/height attributes say. */
+img {
+  max-width: 100%;
+}
+
 .ambient {
   position: fixed;
   inset: 0;
@@ -761,8 +767,8 @@ body.lightbox-open {
 
 .featured-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: 22px;
 }
 
 .featured-card {
@@ -781,20 +787,21 @@ body.lightbox-open {
   box-shadow: 0 16px 36px rgba(0, 119, 182, 0.16);
 }
 
-/* A fixed-height band so two cards of different figure aspect ratios still
-   line up. object-fit: contain rather than cover, because these are plots:
-   cropping one would cut off an axis. */
+/* The figure keeps its own aspect ratio and is only capped in height, so it is
+   never stretched or cropped -- these are plots, and cropping one would cut off
+   an axis. Click to enlarge for the panel detail. */
 .featured-thumb {
   display: block;
   margin: 0;
-  padding: 14px 14px 0;
+  padding: 18px 18px 0;
   background: #ffffff;
 }
 
 .featured-thumb img {
   display: block;
   width: 100%;
-  height: 180px;
+  height: auto;
+  max-height: 280px;
   object-fit: contain;
   object-position: center;
 }
@@ -830,9 +837,6 @@ body.lightbox-open {
   margin: 0 0 16px;
   padding: 12px 0 0;
   border-top: 1px solid var(--border);
-  /* Reserve two lines for the label so a wrapped label in one card does not
-     push its link row out of line with the card beside it. */
-  min-height: 74px;
 }
 
 .featured-metrics div {
@@ -1111,12 +1115,12 @@ body.lightbox-open {
     padding: 22px 16px 14px;
   }
 
-  .featured-grid {
-    grid-template-columns: 1fr;
+  .featured-thumb {
+    padding: 12px 12px 0;
   }
 
   .featured-thumb img {
-    height: 150px;
+    max-height: 200px;
   }
 
   .project-hero {

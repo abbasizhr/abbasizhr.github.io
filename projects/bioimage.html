@@ -33,14 +33,6 @@
         performance &mdash; it was a pipeline transparent enough that every step can be inspected
         and every number traced back to a parameter written down in one file.
       </p>
-      <div class="buttons reveal-child" style="--delay: 0.22s">
-        <a class="button primary" href="../resources/bioimage_report.pdf" target="_blank" rel="noopener">
-          Read the paper (PDF)
-        </a>
-        <a class="button" href="../resources/bioimage_report_fa.pdf" target="_blank" rel="noopener">
-          <span lang="fa" dir="rtl">گزارش فارسی</span> &middot; PDF
-        </a>
-      </div>
     </header>
 
     <section class="section reveal">
@@ -51,12 +43,13 @@
         and the pipeline is short by roughly seven per image.
       </p>
       <p class="section-intro">
-        Pixel overlap is nearly blind to the failure mode classical segmentation actually has, which
-        is getting the object <em>count</em> wrong. Two touching nuclei merged into one blob barely
-        move a Dice score and destroy a count. So results are reported per acquisition modality,
+        Pixel-level overlap alone can overstate quantitative measurement reliability, because split
+        and merge errors alter object counts even when the predicted masks have substantial overlap
+        with the reference. Two touching nuclei merged into one blob barely move a Dice score and
+        destroy a count. So results are reported per acquisition modality,
         with explicit split and merge counters, and with a macro average rather than a single
         flattering pooled number &mdash; the modality groups are badly imbalanced, and a
-        dataset-wide mean hides total failure on the smallest of them.
+        dataset-wide mean hides how far performance drops on the smallest of them.
       </p>
 
       <div class="metric-row">
@@ -151,8 +144,12 @@
           <p>
             IoU between every ground-truth and predicted object, built in one vectorized pass over a
             contingency table &mdash; at this scale that is the difference between seconds and hours.
-            Matching is greedy, which at IoU &ge; 0.5 is provably identical to optimal assignment,
-            since an object cannot exceed that threshold against two different objects at once.
+            Matching is greedy and one-to-one. Above an IoU of 0.5 that is not an approximation:
+            two disjoint predictions each overlapping more than half of the same nucleus would
+            together need more area than the nucleus has, so the pairs above the threshold are
+            already a one-to-one matching. The comparison is strict (<code>&gt;</code> rather than
+            <code>&ge;</code>), matching the published DSB definition and disposing of the tie case
+            at exactly 0.5.
           </p>
         </div>
 
@@ -188,10 +185,13 @@
       </div>
 
       <p class="section-intro" style="margin-top:18px">
-        Brightfield is the weakest group on both axes, and the failure is structural rather than
-        statistical: brightfield nuclei have low contrast against cytoplasm and soft boundaries, so a
+        In this dataset the brightfield images gave substantially lower segmentation performance
+        than either fluorescence group, and the shortfall looks structural rather than statistical:
+        these brightfield nuclei have low contrast against cytoplasm and soft boundaries, so a
         global threshold has no clean level to find, and the distance transform inside a
-        poorly-delimited blob offers the watershed no reliable peak to use as a marker.
+        poorly-delimited blob offers the watershed no reliable peak to use as a marker. The result
+        is specific to this collection and should not be read as a property of brightfield
+        microscopy in general.
       </p>
 
       <p class="note">
@@ -243,8 +243,8 @@
       </p>
       <p class="section-intro">
         <strong>Noise.</strong> Grayscale fluorescence holds up to about &sigma; = 0.05 and then
-        collapses, from F1@0.5 of 0.922 down to 0.467 at &sigma; = 0.2. Brightfield fails far earlier
-        and harder (0.452 &rarr; 0.082). Colour histology is the most robust (0.760 &rarr; 0.674),
+        falls away sharply, from F1@0.5 of 0.922 down to 0.467 at &sigma; = 0.2. Brightfield
+        degrades earlier and further (0.452 &rarr; 0.082). Colour histology is the most robust (0.760 &rarr; 0.674),
         because stained nuclei carry a large intensity separation from the surrounding tissue.
       </p>
       <p class="section-intro">
@@ -302,15 +302,17 @@
         <li class="reveal-child" style="--delay: 0.03s">
           <strong>Pixel overlap and object counting disagree, and only one of them is measuring the
           real failure.</strong> Pooled Dice 0.872 against per-object F1@0.5 of 0.784, with 1,814
-          merge events &mdash; a shortfall of about seven nuclei per image.
+          merge events &mdash; a shortfall of about seven nuclei per image. Pixel overlap alone
+          would have overstated how reliable the object counts are.
         </li>
         <li class="reveal-child" style="--delay: 0.06s">
           <strong>The macro average over modalities is the honest aggregate.</strong> It falls to
           Dice 0.781 and F1@0.5 0.641, because a pooled mean is dominated by the 546 easiest images
-          and hides near-total failure on the 21 hardest.
+          and hides the marked performance degradation on the 21 hardest.
         </li>
         <li class="reveal-child" style="--delay: 0.09s">
-          <strong>Brightfield fails structurally, not statistically.</strong> Low contrast against
+          <strong>In this dataset, brightfield performed substantially worse than the fluorescence
+          modalities, structurally rather than statistically.</strong> Low contrast against
           cytoplasm leaves a global threshold no clean level to find and the watershed no reliable
           marker.
         </li>
@@ -340,13 +342,7 @@
       </p>
 
       <div class="buttons" style="margin-top:22px">
-        <a class="button primary" href="../resources/bioimage_report.pdf" target="_blank" rel="noopener">
-          Full paper (PDF)
-        </a>
-        <a class="button" href="../resources/bioimage_report_fa.pdf" target="_blank" rel="noopener">
-          <span lang="fa" dir="rtl">گزارش آموزشی فارسی</span> &middot; PDF
-        </a>
-        <a class="button" href="../index.html#featured">Back to profile</a>
+        <a class="button primary" href="../index.html#featured">Back to profile</a>
       </div>
     </section>
 

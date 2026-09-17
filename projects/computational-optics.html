@@ -34,14 +34,6 @@
         anywhere in the forward model, which is what makes the validation section mean something
         rather than being two libraries agreeing with each other.
       </p>
-      <div class="buttons reveal-child" style="--delay: 0.22s">
-        <a class="button primary" href="../resources/computational_optics_report.pdf" target="_blank" rel="noopener">
-          Read the paper (PDF)
-        </a>
-        <a class="button" href="../resources/computational_optics_report_fa.pdf" target="_blank" rel="noopener">
-          <span lang="fa" dir="rtl">گزارش فارسی</span> &middot; PDF
-        </a>
-      </div>
     </header>
 
     <section class="section reveal">
@@ -53,12 +45,14 @@
         sometimes peak-to-valley, which for defocus alone differ by a factor of 3.46. Deconvolution
         methods get compared against each other when the dominant variable is actually the
         regularization parameter <em>inside</em> each one. And detector sampling is described as
-        &ldquo;losing detail&rdquo; when what it really does is put real energy at the wrong frequency.
+        &ldquo;losing detail&rdquo; when a large part of what it does is relocate real energy to a
+        frequency it does not belong at.
       </p>
       <p class="section-intro">
         Each of those is answerable with a number. This project builds a simulator careful enough to
         produce those numbers, shows that it reproduces textbook diffraction theory first, and then
-        reports what it finds &mdash; including where a widely quoted approximation stops working.
+        reports what it finds &mdash; including the regime in which a widely used approximation
+        ceases to be accurate.
       </p>
 
       <div class="metric-row">
@@ -196,11 +190,13 @@
     </section>
 
     <section class="section reveal">
-      <h3>Aberrations: where a familiar approximation stops working</h3>
+      <h3>Aberrations: the range over which a familiar approximation holds</h3>
       <p class="claim">
-        The Mar&eacute;chal approximation for the Strehl ratio overstates the true value by a factor
-        of 3.7 at a quarter wave RMS of defocus &mdash; 0.085 against a true 0.023 &mdash; and by
-        orders of magnitude beyond that. It is a small-aberration expansion and behaves like one.
+        The Mar&eacute;chal approximation agrees closely with the directly calculated Strehl ratio
+        in the small-aberration regime and departs from it substantially at larger wavefront
+        errors. At 0.25 waves RMS of defocus it predicts 0.0848, against 0.0229 from the pupil
+        integral &mdash; a factor of 3.7 &mdash; and the gap widens beyond that. It is a
+        small-aberration expansion and behaves like one.
       </p>
       <p class="section-intro">
         Four aberrations are swept at six severities each: defocus, astigmatism, coma and spherical.
@@ -211,9 +207,10 @@
       </p>
       <p class="section-intro">
         A second result falls out of the same sweep: the Strehl ratio and the MTF disagree about
-        which aberration is worst, because they measure different things. At a tenth of a wave RMS
-        of defocus &mdash; a level a Strehl of 0.663 would call &ldquo;nearly diffraction
-        limited&rdquo; &mdash; mid-frequency contrast has already fallen by 40%.
+        which aberration is worst, because they measure different things. At 0.1 waves RMS of
+        defocus the Strehl ratio remains 0.6632 while MTF50 has already fallen by 39.9% &mdash;
+        peak-intensity and transfer-function metrics indicating substantially different levels of
+        image degradation in the same system.
       </p>
 
       <div class="figure-grid">
@@ -241,14 +238,25 @@
           </figcaption>
         </figure>
       </div>
+
+      <p class="note">
+        <strong>On reading FWHM under strong aberration.</strong> For strongly aberrated PSFs the
+        full width at half maximum should be interpreted cautiously: a complex, ringed or
+        multi-lobed intensity distribution is not adequately characterized by a single
+        half-maximum width, and the value can move sharply when a secondary lobe rises past half
+        the peak. MTF and Strehl are therefore reported alongside FWHM throughout rather than in
+        place of it.
+      </p>
     </section>
 
     <section class="section reveal">
-      <h3>Noise and restoration: the parameter matters more than the method</h3>
+      <h3>Noise and restoration: regularization strength against method choice</h3>
       <p class="claim">
-        The spread <em>within</em> a deconvolution method, across its own regularization parameter,
-        is larger than the spread between methods. And PSNR and SSIM do not pick the same setting,
-        so &ldquo;best&rdquo; is not a property of the method alone.
+        Across the restoration methods and conditions tested here, the spread <em>within</em> a
+        deconvolution method, across its own regularization parameter, is larger than the spread
+        between methods &mdash; so regularization choice can have a larger effect on
+        reconstruction quality than the choice between methods. PSNR and SSIM also do not select
+        the same setting, so &ldquo;best&rdquo; is not a property of the method alone.
       </p>
       <p class="section-intro">
         Five treatments are compared across additive Gaussian read noise and Poisson shot noise.
@@ -293,10 +301,11 @@
     </section>
 
     <section class="section reveal">
-      <h3>Detector sampling: a corruption, not a loss</h3>
+      <h3>Detector sampling: aliasing, not only lost contrast</h3>
       <p class="claim">
-        Undersampling does not remove detail. It moves real energy to the wrong frequency, where it
-        is indistinguishable from signal that belongs there.
+        Undersampling does not merely reduce contrast; it introduces aliasing that can relocate
+        spectral content to incorrect frequencies, where it is indistinguishable from signal that
+        belongs there.
       </p>
       <p class="section-intro">
         The detector does two separate things that are routinely conflated. Pixel area integration
@@ -330,23 +339,25 @@
       <ol class="findings">
         <li class="reveal-child" style="--delay: 0.03s">
           <strong>The simulator reproduces diffraction theory to a few parts in 10<sup>4</sup></strong>
-          across 21 independent checks, including two structurally different routes to the optical
+          across 21 validation checks, including two structurally different routes to the optical
           transfer function that agree to machine precision.
         </li>
         <li class="reveal-child" style="--delay: 0.06s">
-          <strong>The Mar&eacute;chal Strehl approximation overstates the true value by 3.7&times;</strong>
-          at a quarter wave RMS, and by orders of magnitude beyond. Quoting it outside the
-          diffraction-limited regime is not a conservative choice.
+          <strong>The Mar&eacute;chal Strehl approximation departs from the directly calculated
+          value as wavefront error grows.</strong> At 0.25 waves RMS of defocus it predicts 0.0848
+          against 0.0229 from the pupil integral &mdash; a factor of 3.7 &mdash; so within the
+          range swept here it is not a conservative estimate outside the small-aberration regime.
         </li>
         <li class="reveal-child" style="--delay: 0.09s">
           <strong>Strehl and MTF disagree about which aberration is worst.</strong>
-          At 0.1 waves RMS of defocus the Strehl of 0.663 still reads as acceptable while MTF50 has
-          fallen 40%. A single scalar quality number cannot stand in for the transfer function.
+          At 0.1 waves RMS of defocus the Strehl ratio is still 0.6632 while MTF50 has fallen
+          39.9%. In this study a single scalar quality number did not stand in for the transfer
+          function.
         </li>
         <li class="reveal-child" style="--delay: 0.12s">
-          <strong>Regularization strength matters more than method choice</strong>, and PSNR and
-          SSIM select different settings &mdash; so reporting only one metric would have produced a
-          different recommendation.
+          <strong>Within the tested reconstruction conditions, regularization strength had a
+          larger effect than method choice</strong>, and PSNR and SSIM select different settings
+          &mdash; so reporting only one metric would have produced a different recommendation.
         </li>
         <li class="reveal-child" style="--delay: 0.15s">
           <strong>For Richardson&ndash;Lucy the iteration count <em>is</em> the regularizer</strong>:
@@ -358,8 +369,8 @@
           the honest context for every number measured with the true PSF in hand.
         </li>
         <li class="reveal-child" style="--delay: 0.21s">
-          <strong>Undersampling corrupts rather than degrades</strong>, and by how much depends on
-          the object's spectrum, not only on the detector.
+          <strong>Undersampling introduces aliasing rather than only reducing contrast</strong>,
+          and how much content folds depends on the object's spectrum, not only on the detector.
         </li>
       </ol>
 
@@ -411,13 +422,7 @@
       </div>
 
       <div class="buttons" style="margin-top:22px">
-        <a class="button primary" href="../resources/computational_optics_report.pdf" target="_blank" rel="noopener">
-          Full paper (PDF, 10 pages)
-        </a>
-        <a class="button" href="../resources/computational_optics_report_fa.pdf" target="_blank" rel="noopener">
-          <span lang="fa" dir="rtl">گزارش آموزشی فارسی</span> &middot; PDF, 16 pages
-        </a>
-        <a class="button" href="../index.html#featured">Back to profile</a>
+        <a class="button primary" href="../index.html#featured">Back to profile</a>
       </div>
     </section>
 

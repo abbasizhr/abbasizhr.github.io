@@ -15,7 +15,7 @@ projects/computational-optics.html      Featured project: Fourier-optics simulat
 projects/bioimage.html                  Featured project: bioimage measurement
 style.css                               All styling, shared by every page
 script.js                               Scroll reveal + click-to-enlarge lightbox
-resources/                              Figures, CV, and the project report PDFs
+resources/                              Figures and the CV PDF
 ```
 
 Both project pages reuse `style.css` and `script.js`, so the reveal animations

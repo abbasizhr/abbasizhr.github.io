@@ -58,8 +58,8 @@
         <img
           src="resources/setup.jpeg"
           alt="Fresnel diffraction experimental setup"
-          width="1200"
-          height="500"
+          width="634"
+          height="629"
           onerror="this.onerror=null;this.src='resources/setup.svg'"
         />
         <figcaption class="setup-caption">
@@ -142,13 +142,15 @@
       <div class="featured-grid">
         <article class="featured-card reveal-child" style="--delay: 0.05s">
           <div class="featured-thumb">
-            <img
-              src="resources/optics_pupil_psf_mtf.png"
-              alt="Circular pupil, the point spread function it produces, and the resulting modulation transfer function"
-              loading="lazy"
-              width="1500"
-              height="455"
-            />
+            <button type="button" class="figure-zoom" aria-label="Enlarge: pupil, point spread function and modulation transfer function">
+              <img
+                src="resources/optics_pupil_psf_mtf.png"
+                alt="Circular pupil, the point spread function it produces, and the resulting modulation transfer function"
+                loading="lazy"
+                width="1500"
+                height="455"
+              />
+            </button>
           </div>
           <div class="featured-body">
             <span class="tag">Python · NumPy/SciPy · Fourier optics</span>
@@ -175,18 +177,21 @@
             </div>
             <p class="featured-links">
               <a href="projects/computational-optics.html">Read the full study &rarr;</a>
-              <a class="secondary" href="resources/computational_optics_report.pdf" target="_blank" rel="noopener">Report (PDF)</a>
             </p>
           </div>
         </article>
 
         <article class="featured-card reveal-child" style="--delay: 0.1s">
           <div class="featured-thumb">
-            <img
-              src="resources/bioimage_segmentation.jpg"
-              alt="Ground-truth nuclei outlines compared against three segmentation methods"
-              loading="lazy"
-            />
+            <button type="button" class="figure-zoom" aria-label="Enlarge: ground-truth nuclei outlines against three segmentation methods">
+              <img
+                src="resources/bioimage_segmentation.jpg"
+                alt="Ground-truth nuclei outlines compared against three segmentation methods"
+                loading="lazy"
+                width="1400"
+                height="1106"
+              />
+            </button>
           </div>
           <div class="featured-body">
             <span class="tag">Python · scikit-image · BBBC038</span>
@@ -213,7 +218,6 @@
             </div>
             <p class="featured-links">
               <a href="projects/bioimage.html">Read the full study &rarr;</a>
-              <a class="secondary" href="resources/bioimage_report.pdf" target="_blank" rel="noopener">Report (PDF)</a>
             </p>
           </div>
         </article>
